@@ -1,0 +1,17 @@
+{
+  "name": "nxp-rf-driver",
+  "version": "0.0.1",
+  "description": "RF driver for NXP JN517x",
+  "keywords": [
+    "rf",
+    "driver"
+  ],
+  "author": "Ramakrishna Boyina <ramakrishna.boyina@nxp.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "nanostack-libservice": "^3.0.0",
+    "sal-stack-nanostack": "^3.0.0",
+    "mbed-drivers": "<1.0.0"
+  },
+  "targetDependencies": {}
+}

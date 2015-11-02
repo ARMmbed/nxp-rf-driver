@@ -1,0 +1,5 @@
+{
+  "build": {
+    "target": "nxpdk5-jn517x-gcc,*"
+  }
+}
