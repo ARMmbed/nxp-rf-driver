@@ -238,7 +238,7 @@ PUBLIC void vMMAC_SetChannelAndPower(uint8 u8Channel, int i8TxPower)
     MICRO_INT_STORAGE;
 
     /* Disable interrupts */
-    //MICRO_INT_ENABLE_ONLY(0);
+    MICRO_INT_ENABLE_ONLY(0);
 
     /* Read current RX control setting in case we want to re-enable it later */
     u32RxCtlData = u32REG_BbcRead(REG_BBC_RXCTL);
@@ -312,7 +312,7 @@ PUBLIC void vMMAC_SetChannelAndPower(uint8 u8Channel, int i8TxPower)
     }
 
     /* Restore interrupts */
-    //MICRO_INT_RESTORE_STATE();
+    MICRO_INT_RESTORE_STATE();
 }
 #endif
 

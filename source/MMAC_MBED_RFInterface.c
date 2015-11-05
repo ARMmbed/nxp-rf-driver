@@ -20,13 +20,9 @@
 #define BBC_MAX_MTU_SIZE   (127) 
 
 /*RF receive buffer*/
-static uint8 u8PktData[RF_BUFFER_SIZE];
 static tsMacFrame sRxFrame, sTxFrame;
-static teTxOption eOptions_Tx = (E_MMAC_TX_START_NOW | E_MMAC_TX_USE_AUTO_ACK |
-								E_MMAC_TX_USE_CCA);   /* Start Now, Auto ACK, Use CCA */
-static teRxOption eOptions_Rx = (E_MMAC_RX_START_NOW | E_MMAC_RX_USE_AUTO_ACK |
-							E_MMAC_RX_ALLOW_MALFORMED | E_MMAC_RX_ALLOW_FCS_ERROR
-							| E_MMAC_RX_ADDRESS_MATCH);
+const teTxOption eOptions_Tx = 0x1A; //(E_MMAC_TX_START_NOW | E_MMAC_TX_USE_AUTO_ACK | E_MMAC_TX_USE_CCA);   /* Start Now, Auto ACK, Use CCA */
+const teRxOption eOptions_Rx = (0x1A | E_MMAC_RX_ADDRESS_MATCH); // (E_MMAC_RX_START_NOW | E_MMAC_RX_USE_AUTO_ACK | E_MMAC_RX_ALLOW_MALFORMED | E_MMAC_RX_ALLOW_FCS_ERROR | E_MMAC_RX_ADDRESS_MATCH);
 static phy_device_driver_s device_driver;
 static uint8_t nxp_MAC[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 static phy_device_channel_info_s channel_info;
@@ -70,6 +66,9 @@ int8_t rf_device_register(void)
     /* Set up BBC; may need to access BBC registers in reset code below */
     vMMAC_Enable();
     vMMAC_ConfigureRadio();
+	
+	/* Set Default MAC Address */
+	//vMMAC_Set_Ext_Address(nxp_MAC);
 	
 	/*Set pointer to MAC address*/
 	device_driver.PHY_MAC = nxp_MAC;
@@ -240,80 +239,78 @@ static int8_t i8MMAC_Extension(phy_extension_type_e extension_type, uint8_t *dat
 int8_t i8MMAC_Start_Cca(uint8_t *data_ptr, uint16_t data_length, uint8_t tx_handle, data_protocol_e data_protocol )
 {
 	mac_tx_handle = tx_handle;
-	{
-		/* send packet */
-		uint8 u8Index = 0;
-		teTxOption eOptions = (0x1A);   /* 0x1A for auto ACK */
-				
-		/* Frame Control Field */
-		sTxFrame.u16FCF = data_ptr[u8Index++];
-		sTxFrame.u16FCF |= data_ptr[u8Index++] << 8;
-		
-		/* Sequence Number */
-		sTxFrame.u8SequenceNum = data_ptr[u8Index++];
-		
-		/* Build Dest & Source addresses */
-		if(sTxFrame.u16FCF & MAC_FCF_DEST_ADDR_MODE_MASK)
-		{
-			sTxFrame.u16DestPAN = data_ptr[u8Index++];
-			sTxFrame.u16DestPAN |= (data_ptr[u8Index++] << 8);
+
+	/* send packet */
+	uint8 u8Index = 0;
 			
-			if(((sTxFrame.u16FCF & MAC_FCF_DEST_ADDR_MODE_MASK) >> MAC_FCF_DEST_ADDR_MODE_BIT) == MAC_FCF_ADDR_16BIT_SHRT_ADDR)
-			{					
-				sTxFrame.uDestAddr.u16Short = data_ptr[u8Index++];
-				sTxFrame.uDestAddr.u16Short |= (data_ptr[u8Index++] << 8);				
-			}
-			else if(((sTxFrame.u16FCF & MAC_FCF_DEST_ADDR_MODE_MASK) >> MAC_FCF_DEST_ADDR_MODE_BIT) == MAC_FCF_ADDR_64BIT_LONG_ADDR)
-			{
-				sTxFrame.uDestAddr.sExt.u32L = data_ptr[u8Index++];
-				sTxFrame.uDestAddr.sExt.u32L |= data_ptr[u8Index++] << 8;
-				sTxFrame.uDestAddr.sExt.u32L |= data_ptr[u8Index++] << 16;
-				sTxFrame.uDestAddr.sExt.u32L |= data_ptr[u8Index++] << 24;
-					sTxFrame.uDestAddr.sExt.u32H = data_ptr[u8Index++];
-					sTxFrame.uDestAddr.sExt.u32H |= data_ptr[u8Index++] << 8;
-					sTxFrame.uDestAddr.sExt.u32H |= data_ptr[u8Index++] << 16;
-					sTxFrame.uDestAddr.sExt.u32H |= data_ptr[u8Index++] << 24;				
-				
-			}
+	/* Frame Control Field */
+	sTxFrame.u16FCF = data_ptr[u8Index++];
+	sTxFrame.u16FCF |= data_ptr[u8Index++] << 8;
+	
+	/* Sequence Number */
+	sTxFrame.u8SequenceNum = data_ptr[u8Index++];
+	
+	/* Build Dest & Source addresses */
+	if(sTxFrame.u16FCF & MAC_FCF_DEST_ADDR_MODE_MASK)
+	{
+		sTxFrame.u16DestPAN = data_ptr[u8Index++];
+		sTxFrame.u16DestPAN |= (data_ptr[u8Index++] << 8);
+		
+		if(((sTxFrame.u16FCF & MAC_FCF_DEST_ADDR_MODE_MASK) >> MAC_FCF_DEST_ADDR_MODE_BIT) == MAC_FCF_ADDR_16BIT_SHRT_ADDR)
+		{					
+			sTxFrame.uDestAddr.u16Short = data_ptr[u8Index++];
+			sTxFrame.uDestAddr.u16Short |= (data_ptr[u8Index++] << 8);				
+		}
+		else if(((sTxFrame.u16FCF & MAC_FCF_DEST_ADDR_MODE_MASK) >> MAC_FCF_DEST_ADDR_MODE_BIT) == MAC_FCF_ADDR_64BIT_LONG_ADDR)
+		{
+			sTxFrame.uDestAddr.sExt.u32L = data_ptr[u8Index++];
+			sTxFrame.uDestAddr.sExt.u32L |= data_ptr[u8Index++] << 8;
+			sTxFrame.uDestAddr.sExt.u32L |= data_ptr[u8Index++] << 16;
+			sTxFrame.uDestAddr.sExt.u32L |= data_ptr[u8Index++] << 24;
+				sTxFrame.uDestAddr.sExt.u32H = data_ptr[u8Index++];
+				sTxFrame.uDestAddr.sExt.u32H |= data_ptr[u8Index++] << 8;
+				sTxFrame.uDestAddr.sExt.u32H |= data_ptr[u8Index++] << 16;
+				sTxFrame.uDestAddr.sExt.u32H |= data_ptr[u8Index++] << 24;				
+			
+		}
+	}
+		
+	if(sTxFrame.u16FCF & MAC_FCF_SRC_ADDR_MODE_MASK)
+	{
+		if((sTxFrame.u16FCF & MAC_FCF_SRC_ADDR_MODE_MASK) && !(sTxFrame.u16FCF & 0x0040))
+		{
+			sTxFrame.u16SrcPAN = data_ptr[u8Index++];
+			sTxFrame.u16SrcPAN |= data_ptr[u8Index++] << 8;
 		}
 			
-		if(sTxFrame.u16FCF & MAC_FCF_SRC_ADDR_MODE_MASK)
+		if(((sTxFrame.u16FCF & MAC_FCF_SRC_ADDR_MODE_MASK) >> MAC_FCF_SRC_ADDR_MODE_BIT) == MAC_FCF_ADDR_16BIT_SHRT_ADDR)
 		{
-			if((sTxFrame.u16FCF & MAC_FCF_SRC_ADDR_MODE_MASK) && !(sTxFrame.u16FCF & 0x0040))
-			{
-				sTxFrame.u16SrcPAN = data_ptr[u8Index++];
-				sTxFrame.u16SrcPAN |= data_ptr[u8Index++] << 8;
-			}
-				
-			if(((sTxFrame.u16FCF & MAC_FCF_SRC_ADDR_MODE_MASK) >> MAC_FCF_SRC_ADDR_MODE_BIT) == MAC_FCF_ADDR_16BIT_SHRT_ADDR)
-			{
-				sTxFrame.uSrcAddr.u16Short = data_ptr[u8Index++];
-				sTxFrame.uSrcAddr.u16Short |= data_ptr[u8Index++] << 8;				
-			}
-			else if(((sTxFrame.u16FCF & MAC_FCF_SRC_ADDR_MODE_MASK) >> MAC_FCF_SRC_ADDR_MODE_BIT) == MAC_FCF_ADDR_64BIT_LONG_ADDR)
-			{
-				sTxFrame.uSrcAddr.sExt.u32L = data_ptr[u8Index++];
-				sTxFrame.uSrcAddr.sExt.u32L |= data_ptr[u8Index++] << 8;
-				sTxFrame.uSrcAddr.sExt.u32L |= data_ptr[u8Index++] << 16;
-				sTxFrame.uSrcAddr.sExt.u32L |= data_ptr[u8Index++] << 24;
-				sTxFrame.uSrcAddr.sExt.u32H = data_ptr[u8Index++];
-				sTxFrame.uSrcAddr.sExt.u32H |= data_ptr[u8Index++] << 8;
-				sTxFrame.uSrcAddr.sExt.u32H |= data_ptr[u8Index++] << 16;
-				sTxFrame.uSrcAddr.sExt.u32H |= data_ptr[u8Index++] << 24;					
-			}
-		}	
+			sTxFrame.uSrcAddr.u16Short = data_ptr[u8Index++];
+			sTxFrame.uSrcAddr.u16Short |= data_ptr[u8Index++] << 8;				
+		}
+		else if(((sTxFrame.u16FCF & MAC_FCF_SRC_ADDR_MODE_MASK) >> MAC_FCF_SRC_ADDR_MODE_BIT) == MAC_FCF_ADDR_64BIT_LONG_ADDR)
+		{
+			sTxFrame.uSrcAddr.sExt.u32L = data_ptr[u8Index++];
+			sTxFrame.uSrcAddr.sExt.u32L |= data_ptr[u8Index++] << 8;
+			sTxFrame.uSrcAddr.sExt.u32L |= data_ptr[u8Index++] << 16;
+			sTxFrame.uSrcAddr.sExt.u32L |= data_ptr[u8Index++] << 24;
+			sTxFrame.uSrcAddr.sExt.u32H = data_ptr[u8Index++];
+			sTxFrame.uSrcAddr.sExt.u32H |= data_ptr[u8Index++] << 8;
+			sTxFrame.uSrcAddr.sExt.u32H |= data_ptr[u8Index++] << 16;
+			sTxFrame.uSrcAddr.sExt.u32H |= data_ptr[u8Index++] << 24;					
+		}
+	}	
 
-		if (bReceiving || (u32REG_BbcRead(REG_BBC_TXBUFAD) & 0xffff))
-		{			
-			printf("Transmission Failure \r\n");
-			return -1; //busy
-		}			
+	if (bReceiving || (u32REG_BbcRead(REG_BBC_TXBUFAD) & 0xffff))
+	{			
+		//printf("Transmission Failure \r\n");
+		return -1; //busy
+	}			
 
-		sTxFrame.u8PayloadLength = (uint8)data_length - u8Index;			
-		memcpy(sTxFrame.uPayload.au8Byte, &data_ptr[u8Index], sTxFrame.u8PayloadLength);			
-			
-		vMMAC_StartMacTransmit(&sTxFrame, eOptions_Tx);
-	}
+	sTxFrame.u8PayloadLength = (uint8)data_length - u8Index;			
+	memcpy(sTxFrame.uPayload.au8Byte, &data_ptr[u8Index], sTxFrame.u8PayloadLength);			
+		
+	vMMAC_StartMacTransmit(&sTxFrame, eOptions_Tx);
 	
     /*Return success*/
     return 0;
@@ -510,6 +507,7 @@ void vAHI_IntHandlerBbc_select(void)
 
 			case REG_BBC_INT_RX_BIT:
 			{
+				uint8 u8PktData[RF_BUFFER_SIZE];
 				uint8 u8Index = 0;
 				//uint8 u8Lqi = 3; /* Need scaling from LQI value */
 				uint8 u8Rssi = u8MMAC_GetRxLqi(NULL);
@@ -574,6 +572,7 @@ void vAHI_IntHandlerBbc_select(void)
 				}
 					
 				memcpy(&u8PktData[u8Index], sRxFrame.uPayload.au8Byte, sRxFrame.u8PayloadLength);
+				//vREG_BbcWrite(REG_BBC_RXBUFAD, 0);
 				arm_net_phy_rx(PHY_LAYER_PAYLOAD, u8PktData, (sRxFrame.u8PayloadLength + u8Index), 0xff, 0xff, rf_radio_driver_id);
 				i8MMAC_Interface_State_Control(PHY_INTERFACE_UP, rf_phy_channel);
 				bReceiving = FALSE;
