@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 ARM. All rights reserved.
+ * Copyright (c) 2015-16 NXP B.V. All rights reserved.
  */
 #ifndef DRIVERRFPHY_H_
 #define DRIVERRFPHY_H_

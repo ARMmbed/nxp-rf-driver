@@ -7,7 +7,7 @@
     "driver"
   ],
   "author": "Ramakrishna Boyina <ramakrishna.boyina@nxp.com>",
-  "license": "Apache-2.0",
+  "license": "Proprietary, all rights reserved.",
   "dependencies": {
     "nanostack-libservice": "^3.0.0",
     "sal-stack-nanostack": "^3.0.0",
