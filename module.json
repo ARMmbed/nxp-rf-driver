@@ -10,8 +10,8 @@
   "license": "Proprietary, all rights reserved.",
   "dependencies": {
     "nanostack-libservice": "^3.0.0",
-    "sal-stack-nanostack": "^3.0.0",
-    "mbed-drivers": "*"
+    "sal-stack-nanostack": "ARMmbed/sal-stack-nanostack-private#v3.0.6",
+    "mbed-drivers": "^1.0.0"
   },
   "targetDependencies": {}
 }
